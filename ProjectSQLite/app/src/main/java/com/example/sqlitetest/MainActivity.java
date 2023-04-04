@@ -5,11 +5,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.Toast;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,6 +22,10 @@ public class MainActivity extends AppCompatActivity {
     EditText cust_name, cust_age;
     Switch active_customer;
     ListView lv_customer;
+
+    ArrayAdapter customerArray;
+
+    DatabaseHelper databaseHelper;
 
     //-----------------------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------------------
@@ -41,6 +49,10 @@ public class MainActivity extends AppCompatActivity {
         active_customer = findViewById(R.id.active_customer);
         lv_customer = findViewById(R.id.lv_customer);
 
+        databaseHelper = new DatabaseHelper(MainActivity.this);
+
+        ShowListView();
+
         //////////////////////////////  Listeners   //////////////////////////////////////////
 
 
@@ -50,24 +62,58 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
+                CustomerModel newCustomer;
                 try {
-                    CustomerModel newCustomer = new CustomerModel(-1, cust_name.getText().toString(), Integer.parseInt(cust_age.getText().toString()), active_customer.isChecked());
+                    newCustomer = new CustomerModel(-1, cust_name.getText().toString(), Integer.parseInt(cust_age.getText().toString()), active_customer.isChecked());
                     Toast.makeText(MainActivity.this, newCustomer.toString(), Toast.LENGTH_SHORT).show();
                 }catch (Exception e) {
                     Toast.makeText(MainActivity.this, "A ocurrido un error", Toast.LENGTH_SHORT).show();
+                    newCustomer = new CustomerModel(-1, "error", 0, false);
                 }
 
 
 
+                boolean succes = databaseHelper.addOne(newCustomer);
+
+                Toast.makeText(MainActivity.this, "Succes = " + succes, Toast.LENGTH_SHORT).show();
+
+                ShowListView();
+
+
             }
         });
+
+
+        //----------------------------------------------------------------------------------------------------------------------------------------
+
 
         btn_viewAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(MainActivity.this, "View All", Toast.LENGTH_SHORT).show();
+
+                ShowListView();
+
+                //Toast.makeText(MainActivity.this, everyOne.toString(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        lv_customer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                CustomerModel clickCustomer = (CustomerModel) parent.getItemAtPosition(position);
+                databaseHelper.deleteOne(clickCustomer);
+                ShowListView();
+                Toast.makeText(MainActivity.this, "Deleted" + clickCustomer.toString() , Toast.LENGTH_SHORT).show();
             }
         });
 
     }
+
+    private void ShowListView() {
+        customerArray = new ArrayAdapter<CustomerModel>(MainActivity.this, android.R.layout.simple_list_item_1, databaseHelper.getEveryone());
+        lv_customer.setAdapter(customerArray);
+    }
+
+
+
 }
